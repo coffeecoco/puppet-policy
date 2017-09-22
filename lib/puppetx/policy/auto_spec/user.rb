@@ -3,7 +3,9 @@ Puppetx::Policy::AutoSpec.newspec 'User' do |u|
   if u[:ensure] == 'present'
     content += "    it { should exist }\n"
     content += "    it { should have_uid('#{u[:uid]}') }\n" if u[:uid]
+    content += "    it { should_not have_uid('0') }\n"
     content += "    it { should belong_to_group('#{u[:gid]}') }\n" if u[:gid]
+    content += "    it { should_not belong_to_group('0') }\n"
     (u[:groups] || []).any? do |g|
       content += "    it { should belong_to_group('#{g}') }\n"
     end

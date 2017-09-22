@@ -1,3 +1,4 @@
+#require 'logger'
 module Puppetx::Policy::AutoSpec
   def self.auto_specs
     @auto_specs
@@ -21,6 +22,10 @@ module Puppetx::Policy::AutoSpec
 
       file_name = spec[:type].downcase.gsub(':', '_') + '_spec.rb'
       file = File.join(spec_dir, file_name)
+#   log = Logger.new(STDOUT)
+#    log.level = Logger::INFO
+#log.info(file)
+#log.info(file_name)
 
       File.open(file, 'w') do |f|
         f.write(spec_content)

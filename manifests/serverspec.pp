@@ -42,7 +42,7 @@ define policy::serverspec (
   }
   $_filename = $filename ? {
     # lint:ignore:double_quoted_strings
-    ''      => regsubst($name, "\W", '_', 'G'),
+#    ''      => regsubst($name, "\W", '_', 'G'),
     # lint:endignore
     default => $filename,
   }

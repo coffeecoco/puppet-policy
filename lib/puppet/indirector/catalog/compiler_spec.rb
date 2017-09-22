@@ -3,6 +3,7 @@ require 'puppet/indirector/catalog/compiler'
 require 'rspec'
 require 'rspec-puppet/errors'
 require 'rspec-puppet/matchers'
+require 'rspec/core/formatters/json_formatter'
 
 ## RSpec catalog helper module to provide `subject` method for specs
 module RSpec::Puppet::CatalogExampleGroup
@@ -27,11 +28,13 @@ class Puppet::Resource::Catalog::CompilerSpec < Puppet::Resource::Catalog::Compi
 
     # We put specs in the parent directory of :manifestdir
     node = node_from_request(request)
-    manifestdir = Puppet.settings.value(:manifestdir, node.environment)
-    spec_dir = File.join(manifestdir, '../policy/catalog')
+    manifest = Puppet.settings.value(:manifest)
+#    spec_dir = File.join(manifest, '../policy/catalog')
+    spec_dir = File.join('/etc/puppetlabs/code/environments/m/policy/catalog/')
 
     # Test by classes, including $certname
-    spec_dirs = []
+     spec_dirs = ['/etc/puppetlabs/code/environments/m/policy/catalog/']
+#    spec_dirs = []
     catalog.classes.each do |c|
       class_dir = c.gsub(/:/, '_')
       class_path = File.join(spec_dir, "class/#{class_dir}")
@@ -64,18 +67,30 @@ class Puppet::Resource::Catalog::CompilerSpec < Puppet::Resource::Catalog::Compi
 
     ## Configure JSON RSpec reporting formatter
     config = RSpec.configuration
-    progress_formatter = RSpec::Core::Formatters::ProgressFormatter.new($stdout)
-    json_formatter = RSpec::Core::Formatters::JsonFormatter.new(config.out)
-    reporter  = RSpec::Core::Reporter.new(progress_formatter, json_formatter)
+#    progress_formatter = RSpec::Core::Formatters::ProgressFormatter.new($stdout)
+    formatter = RSpec::Core::Formatters::JsonFormatter.new(config.output_stream)
+    reporter  = RSpec::Core::Reporter.new(config)
     config.instance_variable_set(:@reporter, reporter)
+
+loader = config.send(:formatter_loader)
+notifications = loader.send(:notifications_for, RSpec::Core::Formatters::JsonFormatter)
+reporter.register_listener(formatter, *notifications)
 
     ## Run RSpec on the policies directory
     Puppet.info("Performing policy rspec-puppet checks")
+
+
+RSpec::Core::Runner.disable_autorun!
+
     RSpec::Core::Runner.run(dirs)
+RSpec.instance_variable_set("@world",nil)
+RSpec.instance_variable_set("@configuration",nil)
 
     ## Return an array of failed policy descriptions
-    json_formatter.output_hash[:examples].collect do |policy|
+    formatter.output_hash[:examples].collect do |policy|
       "-- Failed policy: #{policy[:exception][:message]}" if policy[:status] == 'failed'
+
     end.compact
+
   end
 end
